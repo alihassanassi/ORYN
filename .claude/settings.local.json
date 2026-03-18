@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \":*)",
+      "Bash(C:/Users/aliin/jarvis-kry-forge/venv/Scripts/python.exe -c \":*)"
+    ]
+  }
+}

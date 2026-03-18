@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JARVIS OPS</title>
+<style>
+/* ── Reset & Base ──────────────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --base:#0e1621;--panel:#142233;--surface:#0f1d2e;
+  --arc:#18e0c1;--blue:#3aa0ff;--amber:#ffa020;--red:#ff3355;--green:#22c55e;
+  --t1:#e6f2ff;--t2:#8ca4be;--t3:#4a6070;
+  --b0:#1f3050;--b1:#243a56;--void:#0a1220;
+  --mono:'JetBrains Mono','Share Tech Mono',Consolas,monospace;
+  --disp:'Rajdhani','Segoe UI',Arial,sans-serif;
+}
+html,body{width:100%;height:100%;background:var(--base);color:var(--t1);
+  font-family:var(--mono);font-size:12px;overflow:hidden}
+
+/* ── Boot Overlay ──────────────────────────────────────────────────────── */
+#boot-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--base);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:0;
+  transition:opacity .6s ease;
+}
+#boot-overlay.fade-out{opacity:0;pointer-events:none}
+
+#boot-inner{
+  display:flex;align-items:center;gap:64px;
+  width:860px;
+}
+
+/* Radar canvas */
+#boot-radar{
+  width:220px;height:220px;flex-shrink:0;
+  border-radius:50%;
+  border:1px solid rgba(24,224,193,.18);
+  background:rgba(10,18,32,.8);
+}
+
+/* Right side of boot */
+#boot-right{
+  flex:1;display:flex;flex-direction:column;gap:0;
+}
+#boot-sysline{
+  font-size:8px;letter-spacing:3px;color:var(--t3);margin-bottom:10px;
+}
+#boot-sep1{height:1px;background:rgba(24,224,193,.25);margin-bottom:18px}
+#boot-title{
+  font-family:var(--disp);font-size:58px;font-weight:700;
+  letter-spacing:12px;color:var(--t1);line-height:1;margin-bottom:6px;
+}
+#boot-subtitle{
+  font-size:9px;letter-spacing:5px;color:var(--arc);margin-bottom:22px;
+}
+#boot-sep2{height:1px;background:rgba(24,224,193,.15);margin-bottom:18px}
+
+/* Checklist */
+#boot-checks{display:flex;flex-direction:column;gap:7px;margin-bottom:22px}
+.boot-check{
+  display:flex;align-items:center;gap:10px;
+  font-size:9px;letter-spacing:2px;color:var(--t3);
+  opacity:0;transform:translateX(-8px);
+  transition:opacity .3s ease,transform .3s ease,color .3s ease;
+}
+.boot-check.visible{opacity:1;transform:none}
+.boot-check.done{color:var(--arc)}
+.boot-check .chk-icon{
+  width:14px;height:14px;border:1px solid var(--t3);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-size:9px;
+  flex-shrink:0;transition:border-color .3s,background .3s;
+}
+.boot-check.done .chk-icon{
+  border-color:var(--arc);background:rgba(24,224,193,.12);color:var(--arc);
+}
+
+/* Progress bar */
+#boot-bar-wrap{display:flex;align-items:center;gap:12px}
+#boot-bar-track{
+  flex:1;height:3px;background:var(--panel);
+  border:1px solid rgba(31,48,80,.8);border-radius:2px;overflow:visible;position:relative;
+}
+#boot-bar-fill{
+  height:100%;width:0%;background:linear-gradient(90deg,var(--arc),#64f0d8);
+  border-radius:2px;transition:width .4s ease;position:relative;
+}
+#boot-bar-fill::after{
+  content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);
+  width:12px;height:12px;border-radius:50%;
+  background:radial-gradient(circle,rgba(24,224,193,.8) 0%,transparent 70%);
+}
+#boot-bar-pct{font-size:9px;letter-spacing:1px;color:var(--t2);min-width:34px;text-align:right}
+
+/* Bottom of overlay */
+#boot-footer{
+  margin-top:52px;width:860px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+#boot-footer-line{font-size:7px;letter-spacing:2px;color:var(--t3)}
+
+/* ── Main HUD ───────────────────────────────────────────────────────────── */
+#hud{
+  display:none;flex-direction:column;width:100%;height:100vh;
+}
+#hud.visible{display:flex}
+
+/* ── Topbar ─────────────────────────────────────────────────────────────── */
+#topbar{
+  height:52px;flex-shrink:0;
+  background:linear-gradient(180deg,var(--panel) 0%,var(--surface) 100%);
+  border-bottom:1px solid rgba(24,224,193,.18);
+  display:flex;align-items:center;padding:0 20px;gap:16px;
+}
+#topbar-logo{
+  font-family:var(--disp);font-size:22px;font-weight:700;
+  letter-spacing:5px;color:var(--arc);
+}
+#topbar-sub{font-size:7px;letter-spacing:3px;color:var(--t3);margin-top:2px}
+#topbar-left{display:flex;flex-direction:column}
+#topbar-sep{width:1px;height:32px;background:rgba(255,255,255,.08);flex-shrink:0}
+
+/* Status pills */
+#topbar-status{display:flex;align-items:center;gap:8px;margin-left:8px}
+.status-pill{
+  display:flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:3px;font-size:8px;letter-spacing:2px;
+  border:1px solid transparent;
+}
+.status-pill .dot{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0;
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.pill-ok{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.07);color:var(--green)}
+.pill-ok .dot{background:var(--green)}
+.pill-warn{border-color:rgba(255,160,32,.3);background:rgba(255,160,32,.07);color:var(--amber)}
+.pill-warn .dot{background:var(--amber)}
+.pill-info{border-color:rgba(24,224,193,.3);background:rgba(24,224,193,.07);color:var(--arc)}
+.pill-info .dot{background:var(--arc)}
+
+#topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+#prog-select{
+  background:var(--void);border:1px solid var(--b0);color:var(--t1);
+  font-family:var(--mono);font-size:9px;letter-spacing:1px;
+  padding:5px 10px;border-radius:3px;cursor:pointer;
+}
+#prog-select:focus{outline:none;border-color:var(--arc)}
+.topbar-btn{
+  background:transparent;border:1px solid var(--b0);color:var(--t2);
+  font-family:var(--mono);font-size:9px;letter-spacing:2px;
+  padding:5px 14px;border-radius:3px;cursor:pointer;
+  transition:border-color .2s,color .2s,background .2s;
+}
+.topbar-btn:hover{border-color:var(--arc);color:var(--arc);background:rgba(24,224,193,.06)}
+.topbar-btn.execute{
+  border-color:rgba(24,224,193,.5);color:var(--arc);background:rgba(24,224,193,.08);
+}
+.topbar-btn.execute:hover{background:rgba(24,224,193,.18);border-color:var(--arc)}
+
+/* ── Body ───────────────────────────────────────────────────────────────── */
+#body{display:flex;flex:1;min-height:0;gap:0}
+
+/* ── Left sidebar ───────────────────────────────────────────────────────── */
+#sidebar{
+  width:220px;flex-shrink:0;background:var(--void);
+  border-right:1px solid var(--b0);
+  display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;
+}
+#sidebar::-webkit-scrollbar{width:3px}
+#sidebar::-webkit-scrollbar-track{background:transparent}
+#sidebar::-webkit-scrollbar-thumb{background:var(--b0);border-radius:2px}
+
+.side-section{padding:12px 12px 6px}
+.side-hdr{
+  font-size:7px;letter-spacing:3px;color:var(--t3);
+  border-top:1px solid var(--b0);padding-top:10px;margin-bottom:8px;
+}
+
+/* Asset counters */
+.asset-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:4px}
+.asset-tile{
+  background:var(--surface);border:1px solid var(--b0);border-radius:4px;
+  padding:8px 6px 6px;display:flex;flex-direction:column;align-items:center;
+}
+.asset-tile .num{
+  font-family:var(--disp);font-size:20px;font-weight:700;color:var(--arc);line-height:1;
+}
+.asset-tile .lbl{font-size:6px;letter-spacing:2px;color:var(--t3);margin-top:3px}
+.asset-tile.vuln .num{color:var(--amber)}
+
+/* Stage rail */
+.stage-list{display:flex;flex-direction:column;gap:3px}
+.stage-item{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 8px;border-radius:3px;font-size:8px;letter-spacing:1px;
+  color:var(--t3);border:1px solid transparent;
+  transition:all .3s ease;
+}
+.stage-item .stage-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0;
+  transition:background .3s;
+}
+.stage-item.active{
+  color:var(--arc);background:rgba(24,224,193,.06);
+  border-color:rgba(24,224,193,.18);
+}
+.stage-item.active .stage-dot{background:var(--arc);animation:pulse 1.5s infinite}
+.stage-item.done{color:var(--t2)}
+.stage-item.done .stage-dot{background:var(--green)}
+.stage-progress{
+  margin-left:auto;font-size:7px;color:var(--t3);min-width:28px;text-align:right;
+}
+
+/* Recent discoveries */
+#feed-list{
+  display:flex;flex-direction:column;gap:3px;
+  max-height:220px;overflow-y:auto;padding:0 12px 10px;
+}
+#feed-list::-webkit-scrollbar{width:2px}
+#feed-list::-webkit-scrollbar-thumb{background:var(--b0)}
+.feed-item{
+  font-size:8px;color:var(--t2);
+  border-left:2px solid var(--b0);padding:3px 0 3px 8px;
+  animation:slide-in .3s ease;
+}
+.feed-item.domain{border-left-color:var(--arc)}
+.feed-item.ip{border-left-color:var(--blue)}
+.feed-item.vuln{border-left-color:var(--amber)}
+.feed-item.url{border-left-color:var(--t3)}
+@keyframes slide-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.feed-ts{font-size:7px;color:var(--t3)}
+
+/* Job list */
+#job-list{display:flex;flex-direction:column;gap:3px;padding:0 12px 12px}
+.job-row{
+  background:var(--surface);border:1px solid var(--b0);border-radius:3px;
+  padding:6px 8px;font-size:8px;
+}
+.job-row .job-target{color:var(--t1);margin-bottom:2px}
+.job-row .job-meta{color:var(--t3);font-size:7px;letter-spacing:1px}
+.job-bar{height:2px;background:var(--b0);border-radius:1px;margin-top:5px}
+.job-bar-fill{height:100%;background:var(--arc);border-radius:1px;transition:width .5s}
+.job-bar-fill.done{background:var(--green)}
+.job-bar-fill.failed{background:var(--red)}
+
+/* ── Center graph panel ─────────────────────────────────────────────────── */
+#graph-panel{
+  flex:1;position:relative;background:var(--base);min-width:0;
+}
+#graph-canvas{display:block;width:100%;height:100%}
+#graph-hint{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  font-size:7px;letter-spacing:2px;color:var(--t3);
+  pointer-events:none;
+}
+#graph-empty{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;pointer-events:none;
+}
+#graph-empty .empty-title{
+  font-family:var(--disp);font-size:28px;font-weight:600;
+  letter-spacing:6px;color:rgba(74,96,112,.4);
+}
+#graph-empty .empty-sub{
+  font-size:8px;letter-spacing:3px;color:rgba(74,96,112,.3);
+}
+
+/* ── Right panel ────────────────────────────────────────────────────────── */
+#right-panel{
+  width:280px;flex-shrink:0;background:var(--void);
+  border-left:1px solid var(--b0);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.r-section{padding:12px;border-bottom:1px solid var(--b0);flex-shrink:0}
+.r-hdr{
+  font-size:7px;letter-spacing:3px;color:var(--t3);margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.r-badge{
+  font-size:7px;padding:1px 6px;border-radius:2px;letter-spacing:1px;
+  border:1px solid rgba(24,224,193,.3);color:var(--arc);background:rgba(24,224,193,.07);
+}
+
+/* Findings */
+#findings-list{overflow-y:auto;flex:1;padding:10px 12px}
+#findings-list::-webkit-scrollbar{width:3px}
+#findings-list::-webkit-scrollbar-thumb{background:var(--b0)}
+.finding{
+  background:var(--surface);border:1px solid var(--b0);border-radius:4px;
+  padding:8px 10px;margin-bottom:6px;
+  border-left-width:3px;cursor:pointer;
+  transition:border-color .2s,background .2s;
+}
+.finding:hover{background:var(--panel);border-color:var(--b1)}
+.finding.critical{border-left-color:#ff3355}
+.finding.high{border-left-color:#ff7a20}
+.finding.medium{border-left-color:var(--amber)}
+.finding.low{border-left-color:var(--blue)}
+.finding.info{border-left-color:var(--t3)}
+.f-title{font-size:9px;color:var(--t1);margin-bottom:4px;line-height:1.3}
+.f-meta{font-size:7px;color:var(--t3);letter-spacing:1px}
+.f-sev{
+  display:inline-block;font-size:7px;padding:1px 5px;border-radius:2px;
+  letter-spacing:1px;margin-right:6px;
+}
+.sev-critical{background:rgba(255,51,85,.15);color:#ff3355;border:1px solid rgba(255,51,85,.3)}
+.sev-high{background:rgba(255,122,32,.15);color:#ff7a20;border:1px solid rgba(255,122,32,.3)}
+.sev-medium{background:rgba(255,160,32,.15);color:var(--amber);border:1px solid rgba(255,160,32,.3)}
+.sev-low{background:rgba(58,160,255,.15);color:var(--blue);border:1px solid rgba(58,160,255,.3)}
+.sev-info{background:rgba(74,96,112,.15);color:var(--t2);border:1px solid rgba(74,96,112,.3)}
+
+/* Node detail tooltip */
+#node-detail{
+  position:fixed;z-index:100;
+  background:var(--panel);border:1px solid var(--arc);border-radius:6px;
+  padding:12px 16px;min-width:220px;max-width:320px;
+  display:none;pointer-events:none;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+#node-detail.show{display:block}
+#nd-type{font-size:7px;letter-spacing:3px;color:var(--arc);margin-bottom:4px}
+#nd-value{font-size:11px;color:var(--t1);word-break:break-all;margin-bottom:8px}
+#nd-meta{font-size:8px;color:var(--t2);line-height:1.6}
+#nd-trust{
+  margin-top:8px;padding-top:8px;border-top:1px solid var(--b0);
+  display:flex;align-items:center;gap:8px;
+}
+#nd-trust-bar-track{flex:1;height:2px;background:var(--b0);border-radius:1px}
+#nd-trust-bar-fill{height:100%;background:var(--arc);border-radius:1px}
+#nd-trust-val{font-size:8px;color:var(--arc)}
+
+/* Scan modal */
+#scan-modal{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(8,14,24,.85);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;
+}
+#scan-modal.show{display:flex}
+#scan-modal-inner{
+  background:var(--panel);border:1px solid var(--arc);border-radius:8px;
+  padding:28px 32px;width:460px;
+}
+#scan-modal-inner h2{
+  font-family:var(--disp);font-size:20px;letter-spacing:4px;
+  color:var(--arc);margin-bottom:6px;
+}
+#scan-modal-inner .modal-sub{
+  font-size:8px;letter-spacing:2px;color:var(--t3);margin-bottom:20px;
+}
+.modal-field{margin-bottom:14px}
+.modal-field label{
+  display:block;font-size:8px;letter-spacing:2px;color:var(--t2);margin-bottom:5px;
+}
+.modal-field input,.modal-field select{
+  width:100%;background:var(--void);border:1px solid var(--b0);
+  color:var(--t1);font-family:var(--mono);font-size:10px;
+  padding:8px 10px;border-radius:3px;
+}
+.modal-field input:focus,.modal-field select:focus{
+  outline:none;border-color:var(--arc);background:rgba(24,224,193,.04);
+}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.modal-btn{
+  flex:1;padding:9px;border-radius:3px;font-family:var(--mono);
+  font-size:9px;letter-spacing:2px;cursor:pointer;transition:all .2s;
+}
+.modal-btn-cancel{
+  background:transparent;border:1px solid var(--b0);color:var(--t2);
+}
+.modal-btn-cancel:hover{border-color:var(--t2);color:var(--t1)}
+.modal-btn-go{
+  background:rgba(24,224,193,.1);border:1px solid rgba(24,224,193,.4);
+  color:var(--arc);
+}
+.modal-btn-go:hover{background:rgba(24,224,193,.2);border-color:var(--arc)}
+
+/* ── Utility ─────────────────────────────────────────────────────────────── */
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ BOOT OVERLAY -->
+<div id="boot-overlay">
+  <div id="boot-inner">
+    <!-- Radar canvas -->
+    <canvas id="boot-radar" width="220" height="220"></canvas>
+
+    <!-- Right side -->
+    <div id="boot-right">
+      <div id="boot-sysline">JARVIS OPERATIONS SYSTEM &nbsp;//&nbsp; v2.0 &nbsp;//&nbsp; SECURE BOOT</div>
+      <div id="boot-sep1"></div>
+      <div id="boot-title">JARVIS</div>
+      <div id="boot-subtitle">CYBERSECURITY OPERATIONS CENTER</div>
+      <div id="boot-sep2"></div>
+
+      <div id="boot-checks">
+        <div class="boot-check" id="chk-net">
+          <div class="chk-icon" id="chk-net-icon">&nbsp;</div>
+          <span>NETWORK STACK OK</span>
+        </div>
+        <div class="boot-check" id="chk-db">
+          <div class="chk-icon" id="chk-db-icon">&nbsp;</div>
+          <span>DATABASE CONNECTED</span>
+        </div>
+        <div class="boot-check" id="chk-workers">
+          <div class="chk-icon" id="chk-workers-icon">&nbsp;</div>
+          <span>WORKER POOL READY (×4)</span>
+        </div>
+        <div class="boot-check" id="chk-ws">
+          <div class="chk-icon" id="chk-ws-icon">&nbsp;</div>
+          <span>WS DISCOVERY FEED LIVE</span>
+        </div>
+        <div class="boot-check" id="chk-pipe">
+          <div class="chk-icon" id="chk-pipe-icon">&nbsp;</div>
+          <span>PIPELINE ENGINE ARMED</span>
+        </div>
+        <div class="boot-check" id="chk-scan">
+          <div class="chk-icon" id="chk-scan-icon">&nbsp;</div>
+          <span>SCAN ENGINE READY</span>
+        </div>
+      </div>
+
+      <div id="boot-bar-wrap">
+        <div id="boot-bar-track"><div id="boot-bar-fill"></div></div>
+        <div id="boot-bar-pct">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="boot-footer">
+    <div id="boot-footer-line">LOCALHOST &nbsp;//&nbsp; SECURE &nbsp;//&nbsp; AES-256 &nbsp;//&nbsp; NO EXTERNAL CALLS</div>
+    <div id="boot-footer-line">BUILD&nbsp;2026.03.16</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ MAIN HUD -->
+<div id="hud">
+
+  <!-- Topbar -->
+  <div id="topbar">
+    <div id="topbar-left">
+      <div id="topbar-logo">JARVIS<span style="color:var(--t3);font-size:14px;letter-spacing:2px"> OPS</span></div>
+      <div id="topbar-sub">OPERATIONS CONSOLE</div>
+    </div>
+    <div id="topbar-sep"></div>
+    <div id="topbar-status">
+      <div class="status-pill pill-ok" id="pill-api"><div class="dot"></div><span>API</span></div>
+      <div class="status-pill pill-warn" id="pill-ws"><div class="dot"></div><span>WS</span></div>
+      <div class="status-pill pill-info" id="pill-workers"><div class="dot"></div><span>WORKERS</span></div>
+    </div>
+    <div id="topbar-right">
+      <select id="prog-select" onchange="onProgramChange(this.value)">
+        <option value="">— SELECT PROGRAM —</option>
+      </select>
+      <button class="topbar-btn" onclick="refreshAll()">REFRESH</button>
+      <button class="topbar-btn execute" onclick="openScanModal()">⬡ EXECUTE SCAN</button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div id="body">
+
+    <!-- Left sidebar -->
+    <div id="sidebar">
+      <div class="side-section">
+        <div class="side-hdr">ASSET COVERAGE</div>
+        <div class="asset-grid">
+          <div class="asset-tile"><div class="num" id="cnt-domain">0</div><div class="lbl">DOMAINS</div></div>
+          <div class="asset-tile"><div class="num" id="cnt-sub">0</div><div class="lbl">SUBDOMAINS</div></div>
+          <div class="asset-tile"><div class="num" id="cnt-ip">0</div><div class="lbl">IPS</div></div>
+          <div class="asset-tile"><div class="num" id="cnt-url">0</div><div class="lbl">URLS</div></div>
+          <div class="asset-tile"><div class="num" id="cnt-svc">0</div><div class="lbl">SERVICES</div></div>
+          <div class="asset-tile vuln"><div class="num" id="cnt-vuln">0</div><div class="lbl">VULNS</div></div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <div class="side-hdr">PIPELINE STAGES</div>
+        <div class="stage-list" id="stage-list">
+          <div class="stage-item" data-stage="subdomain_discovery">
+            <div class="stage-dot"></div><span>SUBDOMAIN DISCOVERY</span><span class="stage-progress"></span>
+          </div>
+          <div class="stage-item" data-stage="dns_resolution">
+            <div class="stage-dot"></div><span>DNS RESOLUTION</span><span class="stage-progress"></span>
+          </div>
+          <div class="stage-item" data-stage="http_probe">
+            <div class="stage-dot"></div><span>HTTP PROBE</span><span class="stage-progress"></span>
+          </div>
+          <div class="stage-item" data-stage="url_collection">
+            <div class="stage-dot"></div><span>URL COLLECTION</span><span class="stage-progress"></span>
+          </div>
+          <div class="stage-item" data-stage="crawler">
+            <div class="stage-dot"></div><span>CRAWLER</span><span class="stage-progress"></span>
+          </div>
+          <div class="stage-item" data-stage="vulnerability_scan">
+            <div class="stage-dot"></div><span>VULN SCAN</span><span class="stage-progress"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <div class="side-hdr">ACTIVE JOBS</div>
+      </div>
+      <div id="job-list"></div>
+
+      <div class="side-section" style="padding-bottom:4px">
+        <div class="side-hdr">DISCOVERY FEED</div>
+      </div>
+      <div id="feed-list"></div>
+    </div>
+
+    <!-- Graph panel -->
+    <div id="graph-panel">
+      <canvas id="graph-canvas"></canvas>
+      <div id="graph-empty">
+        <div class="empty-title">NO GRAPH DATA</div>
+        <div class="empty-sub">SELECT A PROGRAM AND EXECUTE A SCAN</div>
+      </div>
+      <div id="graph-hint">SCROLL TO ZOOM &nbsp;·&nbsp; DRAG TO PAN &nbsp;·&nbsp; HOVER NODES FOR DETAIL</div>
+    </div>
+
+    <!-- Right panel -->
+    <div id="right-panel">
+      <div class="r-section">
+        <div class="r-hdr">
+          FINDINGS
+          <span class="r-badge" id="findings-badge">0</span>
+        </div>
+      </div>
+      <div id="findings-list"></div>
+    </div>
+
+  </div><!-- /body -->
+</div><!-- /hud -->
+
+<!-- Node detail tooltip -->
+<div id="node-detail">
+  <div id="nd-type"></div>
+  <div id="nd-value"></div>
+  <div id="nd-meta"></div>
+  <div id="nd-trust">
+    <span style="font-size:7px;letter-spacing:1px;color:var(--t3)">TRUST</span>
+    <div id="nd-trust-bar-track"><div id="nd-trust-bar-fill"></div></div>
+    <span id="nd-trust-val"></span>
+  </div>
+</div>
+
+<!-- Scan modal -->
+<div id="scan-modal">
+  <div id="scan-modal-inner">
+    <h2>EXECUTE SCAN</h2>
+    <div class="modal-sub">LAUNCH FULL RECON PIPELINE ON TARGET DOMAIN</div>
+    <div class="modal-field">
+      <label>TARGET DOMAIN</label>
+      <input type="text" id="scan-domain-input" placeholder="example.com" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="modal-field">
+      <label>PROGRAM</label>
+      <select id="scan-prog-select"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeScanModal()">CANCEL</button>
+      <button class="modal-btn modal-btn-go" onclick="submitScan()">LAUNCH</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ═══════════════════════════════════════════════════ BOOT ANIMATION
+(function bootSequence(){
+  const radar   = document.getElementById('boot-radar');
+  const ctx     = radar.getContext('2d');
+  const W = 220, H = 220, CX = W/2, CY = H/2;
+
+  const ARC = '#18e0c1', BLUE = '#3aa0ff';
+  let   angle = 0, frame = 0, done = false;
+
+  function drawRadar(){
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#0a1220';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid circles
+    [80, 60, 40, 20].forEach(r => {
+      ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(24,224,193,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+    });
+
+    // Cross-hairs
+    ctx.strokeStyle = 'rgba(24,224,193,0.1)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(CX, 10); ctx.lineTo(CX, H-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10, CY); ctx.lineTo(W-10, CY); ctx.stroke();
+
+    // Sweep gradient (conical fade)
+    const sweepEnd = angle;
+    const sweepStart = sweepEnd - Math.PI * 0.6;
+    const grad = ctx.createConicalGradient
+      ? ctx.createConicalGradient(CX, CY, sweepStart)
+      : null;
+
+    // Fallback: draw arc segments manually for the sweep trail
+    for(let i = 0; i < 24; i++){
+      const a0 = sweepEnd - (i / 24) * Math.PI * 0.65;
+      const a1 = sweepEnd - ((i+1) / 24) * Math.PI * 0.65;
+      const alpha = (1 - i/24) * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(CX, CY);
+      ctx.arc(CX, CY, 80, a0, a1);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(24,224,193,${alpha})`;
+      ctx.fill();
+    }
+
+    // Sweep leading edge
+    const ex = CX + 82 * Math.cos(angle);
+    const ey = CY + 82 * Math.sin(angle);
+    ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(ex, ey);
+    ctx.strokeStyle = `rgba(24,224,193,0.9)`; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Outer ring
+    ctx.beginPath(); ctx.arc(CX, CY, 82, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(24,224,193,0.28)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Tick marks
+    for(let i=0; i<12; i++){
+      const a = i * Math.PI / 6;
+      const x0 = CX + 78*Math.cos(a), y0 = CY + 78*Math.sin(a);
+      const x1 = CX + 86*Math.cos(a), y1 = CY + 86*Math.sin(a);
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1);
+      ctx.strokeStyle='rgba(24,224,193,0.4)'; ctx.lineWidth=1; ctx.stroke();
+    }
+
+    // Center dot glow
+    const cg = ctx.createRadialGradient(CX, CY, 0, CX, CY, 8);
+    cg.addColorStop(0, 'rgba(24,224,193,0.9)');
+    cg.addColorStop(1, 'rgba(24,224,193,0)');
+    ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(CX, CY, 8, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#18e0c1'; ctx.beginPath(); ctx.arc(CX, CY, 3, 0, Math.PI*2); ctx.fill();
+
+    if(!done){
+      angle += 0.035;
+      requestAnimationFrame(drawRadar);
+    }
+  }
+  drawRadar();
+
+  // Boot check sequence
+  const checks = ['net','db','workers','ws','pipe','scan'];
+  const delays = [300, 550, 800, 1050, 1300, 1550];
+
+  checks.forEach((id, i) => {
+    setTimeout(() => {
+      const el = document.getElementById('chk-'+id);
+      const icon = document.getElementById('chk-'+id+'-icon');
+      el.classList.add('visible');
+      setTimeout(() => {
+        el.classList.add('done');
+        icon.textContent = '✓';
+        // Update progress bar
+        const pct = Math.round(((i+1)/checks.length)*100);
+        document.getElementById('boot-bar-fill').style.width = pct+'%';
+        document.getElementById('boot-bar-pct').textContent = pct+'%';
+      }, 220);
+    }, delays[i]);
+  });
+
+  // Show HUD after boot sequence
+  setTimeout(() => {
+    done = true;
+    document.getElementById('boot-overlay').classList.add('fade-out');
+    setTimeout(() => {
+      document.getElementById('boot-overlay').style.display = 'none';
+      const hud = document.getElementById('hud');
+      hud.classList.add('visible');
+      hud.style.opacity = '0';
+      hud.style.transition = 'opacity .5s ease';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { hud.style.opacity = '1'; });
+      });
+      initApp();
+    }, 650);
+  }, 2200);
+})();
+
+
+// ═══════════════════════════════════════════════════ APP STATE
+const API = '';  // same origin
+let   state = {
+  programs: [], programId: null,
+  graphData: { nodes:[], edges:[] },
+  findings: [], jobs: [],
+  pan:{x:0,y:0}, zoom:1.0,
+  dragging:false, dragStart:{x:0,y:0}, lastPan:{x:0,y:0},
+  hoveredNode: null,
+};
+
+let ws = null;
+
+// ═══════════════════════════════════════════════════ INIT
+function initApp(){
+  loadPrograms().then(() => {
+    if(state.programId) refreshAll();
+  });
+  initGraph();
+  connectWS();
+}
+
+// ═══════════════════════════════════════════════════ API HELPERS
+async function api(path, opts={}){
+  const r = await fetch(API + path, {
+    headers:{'Content-Type':'application/json',...(opts.headers||{})},
+    ...opts
+  });
+  if(!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════ PROGRAMS
+async function loadPrograms(){
+  try {
+    state.programs = await api('/api/programs');
+    const sel = document.getElementById('prog-select');
+    sel.innerHTML = '<option value="">— SELECT PROGRAM —</option>';
+    state.programs.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.name;
+      sel.appendChild(o);
+    });
+    // Auto-select first
+    if(state.programs.length && !state.programId){
+      state.programId = state.programs[0].id;
+      sel.value = state.programId;
+    }
+    // Also populate scan modal select
+    const ms = document.getElementById('scan-prog-select');
+    ms.innerHTML = '';
+    state.programs.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.name;
+      ms.appendChild(o);
+    });
+    if(state.programId) ms.value = state.programId;
+  } catch(e){ console.warn('loadPrograms:', e) }
+}
+
+function onProgramChange(id){
+  state.programId = id || null;
+  if(id) refreshAll();
+}
+
+// ═══════════════════════════════════════════════════ REFRESH
+async function refreshAll(){
+  if(!state.programId) return;
+  await Promise.all([loadGraph(), loadFindings(), loadJobs()]);
+}
+
+// ═══════════════════════════════════════════════════ GRAPH
+async function loadGraph(){
+  if(!state.programId) return;
+  try {
+    const d = await api(`/api/graph/${state.programId}`);
+    state.graphData = d;
+    updateCounters(d.stats && d.stats.by_type ? d.stats.by_type : {});
+    const empty = document.getElementById('graph-empty');
+    empty.style.display = d.nodes.length ? 'none' : 'flex';
+    layoutGraph();
+    drawGraph();
+  } catch(e){ console.warn('loadGraph:', e) }
+}
+
+function updateCounters(by_type){
+  const m = {domain:'cnt-domain',subdomain:'cnt-sub',ip:'cnt-ip',
+             url:'cnt-url',service:'cnt-svc',vulnerability:'cnt-vuln'};
+  Object.entries(m).forEach(([t,id]) => {
+    document.getElementById(id).textContent = by_type[t] || 0;
+  });
+}
+
+// ═══════════════════════════════════════════════════ GRAPH LAYOUT (force-directed)
+function layoutGraph(){
+  const nodes = state.graphData.nodes;
+  const edges = state.graphData.edges;
+  if(!nodes.length) return;
+
+  const canvas = document.getElementById('graph-canvas');
+  const W = canvas.width, H = canvas.height;
+
+  // Init positions if not set
+  nodes.forEach(n => {
+    if(n.x === undefined){
+      n.x = W/2 + (Math.random()-0.5)*400;
+      n.y = H/2 + (Math.random()-0.5)*300;
+    }
+    n.vx = n.vx || 0; n.vy = n.vy || 0;
+  });
+
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.id] = n);
+
+  // Run force iterations
+  for(let iter=0; iter<120; iter++){
+    // Repulsion
+    for(let i=0; i<nodes.length; i++){
+      for(let j=i+1; j<nodes.length; j++){
+        const a=nodes[i], b=nodes[j];
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const dist=Math.sqrt(dx*dx+dy*dy)||1;
+        const force=1800/(dist*dist);
+        const fx=dx/dist*force, fy=dy/dist*force;
+        a.vx-=fx; a.vy-=fy; b.vx+=fx; b.vy+=fy;
+      }
+    }
+    // Attraction (edges)
+    edges.forEach(e => {
+      const a=nodeMap[e.source], b=nodeMap[e.target];
+      if(!a||!b) return;
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const dist=Math.sqrt(dx*dx+dy*dy)||1;
+      const force=(dist-90)*0.02;
+      const fx=dx/dist*force, fy=dy/dist*force;
+      a.vx+=fx; a.vy+=fy; b.vx-=fx; b.vy-=fy;
+    });
+    // Centre gravity
+    nodes.forEach(n => {
+      n.vx += (W/2 - n.x) * 0.003;
+      n.vy += (H/2 - n.y) * 0.003;
+    });
+    // Apply with damping
+    nodes.forEach(n => {
+      n.x += n.vx * 0.5; n.y += n.vy * 0.5;
+      n.vx *= 0.8; n.vy *= 0.8;
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════ GRAPH DRAW
+const NODE_COLORS = {
+  domain:'#18e0c1', subdomain:'#3aa0ff', ip:'#a78bfa',
+  url:'#4a6070', service:'#22c55e', vulnerability:'#ff3355',
+  endpoint:'#4a6070', default:'#8ca4be',
+};
+
+function drawGraph(){
+  const canvas = document.getElementById('graph-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const {nodes, edges} = state.graphData;
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.id] = n);
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(state.pan.x, state.pan.y);
+  ctx.scale(state.zoom, state.zoom);
+
+  // Draw edges
+  edges.forEach(e => {
+    const a = nodeMap[e.source], b = nodeMap[e.target];
+    if(!a||!b) return;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = 'rgba(31,48,80,0.7)'; ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const col = NODE_COLORS[n.type] || NODE_COLORS.default;
+    const r = n.type === 'domain' ? 9 : n.type === 'subdomain' ? 7 : 5;
+    const isHov = state.hoveredNode && state.hoveredNode.id === n.id;
+
+    // Glow for hovered
+    if(isHov){
+      const glow = ctx.createRadialGradient(n.x, n.y, r, n.x, n.y, r*3.5);
+      glow.addColorStop(0, col + '60');
+      glow.addColorStop(1, col + '00');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r*3.5, 0, Math.PI*2); ctx.fill();
+    }
+
+    // Node circle
+    ctx.beginPath(); ctx.arc(n.x, n.y, r + (isHov ? 2 : 0), 0, Math.PI*2);
+    ctx.fillStyle = col;
+    ctx.fill();
+
+    // Inner highlight
+    ctx.beginPath(); ctx.arc(n.x, n.y, (r + (isHov?2:0)) * 0.5, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fill();
+
+    // Label (skip for small types at low zoom)
+    if(state.zoom > 0.5 && (n.type === 'domain' || n.type === 'subdomain' || isHov)){
+      const label = n.value.length > 26 ? n.value.slice(0,24)+'…' : n.value;
+      ctx.font = `${Math.round(8/state.zoom)}px "JetBrains Mono",Consolas,monospace`;
+      ctx.fillStyle = isHov ? '#e6f2ff' : 'rgba(140,164,190,0.8)';
+      ctx.textAlign = 'center';
+      const textY = n.y + r + Math.round(13/state.zoom);
+      ctx.fillText(label, n.x, textY);
+    }
+
+    // Vuln badge
+    if(n.finding_count > 0){
+      ctx.fillStyle = '#ff3355';
+      ctx.beginPath(); ctx.arc(n.x + r, n.y - r, 4, 0, Math.PI*2); ctx.fill();
+      ctx.font = `bold 6px Consolas,monospace`;
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+      ctx.fillText(n.finding_count, n.x + r, n.y - r + 2);
+    }
+  });
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════ GRAPH CANVAS INIT
+function initGraph(){
+  const canvas = document.getElementById('graph-canvas');
+  function resize(){
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    drawGraph();
+  }
+  new ResizeObserver(resize).observe(canvas);
+  resize();
+
+  // Pan
+  canvas.addEventListener('mousedown', e => {
+    state.dragging = true;
+    state.dragStart = {x: e.clientX, y: e.clientY};
+    state.lastPan   = {x: state.pan.x, y: state.pan.y};
+    canvas.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mouseup', () => {
+    state.dragging = false;
+    canvas.style.cursor = 'default';
+  });
+  canvas.addEventListener('mousemove', e => {
+    if(state.dragging){
+      state.pan.x = state.lastPan.x + (e.clientX - state.dragStart.x);
+      state.pan.y = state.lastPan.y + (e.clientY - state.dragStart.y);
+      drawGraph(); return;
+    }
+    // Hover detection
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left - state.pan.x) / state.zoom;
+    const my = (e.clientY - rect.top  - state.pan.y) / state.zoom;
+    let found = null;
+    state.graphData.nodes.forEach(n => {
+      const r = n.type==='domain'?9:n.type==='subdomain'?7:5;
+      const dx=n.x-mx, dy=n.y-my;
+      if(dx*dx+dy*dy <= (r+4)*(r+4)) found = n;
+    });
+    if(found !== state.hoveredNode){
+      state.hoveredNode = found;
+      drawGraph();
+      if(found){ showNodeDetail(found, e.clientX, e.clientY); }
+      else      { hideNodeDetail(); }
+    } else if(found){ moveNodeDetail(e.clientX, e.clientY); }
+  });
+  canvas.addEventListener('mouseleave', () => { hideNodeDetail(); state.hoveredNode=null; drawGraph(); });
+
+  // Zoom
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    state.pan.x = mx - (mx - state.pan.x) * factor;
+    state.pan.y = my - (my - state.pan.y) * factor;
+    state.zoom = Math.max(0.15, Math.min(5, state.zoom * factor));
+    drawGraph();
+  }, {passive:false});
+}
+
+// ═══════════════════════════════════════════════════ NODE DETAIL
+function showNodeDetail(node, cx, cy){
+  const el = document.getElementById('node-detail');
+  document.getElementById('nd-type').textContent  = node.type.toUpperCase();
+  document.getElementById('nd-value').textContent = node.value;
+  const m = node.metadata || {};
+  const metaLines = Object.entries(m)
+    .filter(([k]) => k !== 'source_tool')
+    .slice(0,5)
+    .map(([k,v]) => `${k}: ${v}`)
+    .join('\n');
+  document.getElementById('nd-meta').textContent  = metaLines || '—';
+  const trust = node.trust_score !== undefined ? node.trust_score : 0.5;
+  document.getElementById('nd-trust-bar-fill').style.width = (trust*100)+'%';
+  document.getElementById('nd-trust-val').textContent      = trust.toFixed(2);
+  el.classList.add('show');
+  moveNodeDetail(cx, cy);
+}
+function moveNodeDetail(cx, cy){
+  const el = document.getElementById('node-detail');
+  const W = window.innerWidth, H = window.innerHeight;
+  let x = cx + 16, y = cy - 20;
+  if(x + 320 > W) x = cx - 336;
+  if(y + 160 > H) y = cy - 180;
+  el.style.left = x + 'px'; el.style.top = y + 'px';
+}
+function hideNodeDetail(){
+  document.getElementById('node-detail').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════ FINDINGS
+async function loadFindings(){
+  if(!state.programId) return;
+  try {
+    const findings = await api(`/api/findings?program_id=${state.programId}`);
+    state.findings = findings;
+    renderFindings(findings);
+    document.getElementById('findings-badge').textContent = findings.length;
+  } catch(e){ console.warn('loadFindings:', e) }
+}
+
+function renderFindings(findings){
+  const list = document.getElementById('findings-list');
+  if(!findings.length){
+    list.innerHTML = '<div style="padding:20px;text-align:center;font-size:8px;letter-spacing:2px;color:var(--t3)">NO FINDINGS YET</div>';
+    return;
+  }
+  list.innerHTML = findings.slice(0,50).map(f => {
+    const sev = (f.metadata && f.metadata.severity) || f.severity || 'info';
+    return `<div class="finding ${sev}" onclick="">
+      <div class="f-title">${f.value || f.title || 'Finding'}</div>
+      <div class="f-meta">
+        <span class="f-sev sev-${sev}">${sev.toUpperCase()}</span>
+        <span style="color:var(--t3)">${f.last_seen ? f.last_seen.slice(0,10) : ''}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════ JOBS
+async function loadJobs(){
+  if(!state.programId) return;
+  try {
+    const jobs = await api(`/api/jobs?program_id=${state.programId}`);
+    state.jobs = jobs;
+    renderJobs(jobs.filter(j => j.status==='running' || j.status==='pending').slice(0,6));
+    updateStages(jobs.find(j => j.status==='running'));
+  } catch(e){ console.warn('loadJobs:', e) }
+}
+
+function renderJobs(jobs){
+  const list = document.getElementById('job-list');
+  if(!jobs.length){ list.innerHTML=''; return; }
+  list.innerHTML = jobs.map(j => {
+    const pct = Math.round((j.progress||0)*100);
+    const barClass = j.status==='completed'?'done':j.status==='failed'?'failed':'';
+    return `<div class="job-row">
+      <div class="job-target">${j.target}</div>
+      <div class="job-meta">${j.type.toUpperCase()} &nbsp;·&nbsp; ${j.status.toUpperCase()} &nbsp;·&nbsp; ${pct}%</div>
+      <div class="job-bar"><div class="job-bar-fill ${barClass}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function updateStages(activeJob){
+  const stages = document.querySelectorAll('#stage-list .stage-item');
+  const stageOrder = ['subdomain_discovery','dns_resolution','http_probe',
+                      'url_collection','crawler','vulnerability_scan'];
+  const currentStage = activeJob ? activeJob.stage : null;
+  const currentIdx = stageOrder.indexOf(currentStage);
+
+  stages.forEach(el => {
+    const s = el.dataset.stage;
+    const idx = stageOrder.indexOf(s);
+    el.classList.remove('active','done');
+    const prog = el.querySelector('.stage-progress');
+    if(currentStage && idx < currentIdx){
+      el.classList.add('done'); if(prog) prog.textContent='✓';
+    } else if(s === currentStage){
+      el.classList.add('active'); if(prog) prog.textContent='…';
+    } else {
+      if(prog) prog.textContent='';
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════ WEBSOCKET
+function connectWS(){
+  try {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/ws/feed`);
+
+    ws.onopen  = () => {
+      document.getElementById('pill-ws').className = 'status-pill pill-ok';
+      document.getElementById('pill-ws').querySelector('span').textContent = 'WS';
+    };
+    ws.onclose = () => {
+      document.getElementById('pill-ws').className = 'status-pill pill-warn';
+      setTimeout(connectWS, 3000);
+    };
+    ws.onmessage = e => {
+      try { handleWsMessage(JSON.parse(e.data)); } catch(_){}
+    };
+
+    // API health check for worker pill
+    api('/api/health').then(h => {
+      const ok = h.status === 'ok';
+      document.getElementById('pill-api').className = `status-pill ${ok?'pill-ok':'pill-warn'}`;
+      document.getElementById('pill-workers').querySelector('span').textContent =
+        `${h.active_jobs||0} JOBS`;
+    }).catch(() => {
+      document.getElementById('pill-api').className = 'status-pill pill-warn';
+    });
+  } catch(_){}
+}
+
+function handleWsMessage(msg){
+  if(msg.type === 'ping') return;
+  if(msg.type === 'asset'){
+    addFeedItem(msg.data);
+    // Refresh graph/counters gently
+    if(state.programId) loadGraph();
+  }
+  if(msg.type === 'job_update'){
+    loadJobs();
+    if(msg.data.status === 'completed') loadFindings();
+  }
+}
+
+// ═══════════════════════════════════════════════════ FEED
+const MAX_FEED = 80;
+function addFeedItem(asset){
+  const list = document.getElementById('feed-list');
+  const item = document.createElement('div');
+  item.className = `feed-item ${asset.type||'url'}`;
+  const ts = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  item.innerHTML = `<div>${asset.value}</div><div class="feed-ts">${ts} &nbsp;${asset.type||''}</div>`;
+  list.insertBefore(item, list.firstChild);
+  while(list.children.length > MAX_FEED) list.removeChild(list.lastChild);
+}
+
+// ═══════════════════════════════════════════════════ SCAN MODAL
+function openScanModal(){
+  if(state.programId){
+    document.getElementById('scan-prog-select').value = state.programId;
+  }
+  document.getElementById('scan-modal').classList.add('show');
+  document.getElementById('scan-domain-input').focus();
+}
+function closeScanModal(){
+  document.getElementById('scan-modal').classList.remove('show');
+  document.getElementById('scan-domain-input').value = '';
+}
+async function submitScan(){
+  const domain = document.getElementById('scan-domain-input').value.trim().toLowerCase();
+  const prog   = document.getElementById('scan-prog-select').value;
+  if(!domain || !prog){ alert('Domain and program required'); return; }
+  try {
+    const token = window.__JARVIS_TOKEN || '';
+    const r = await api('/api/scan/domain', {
+      method:'POST',
+      headers:{'X-Jarvis-Ops-Token': token},
+      body: JSON.stringify({domain, program_id: prog}),
+    });
+    closeScanModal();
+    loadJobs();
+  } catch(e){ alert('Scan failed: '+e.message); }
+}
+
+// Key: Escape closes modal
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeScanModal();
+});
+
+// Auto-refresh every 15s
+setInterval(() => { if(state.programId) refreshAll(); }, 15000);
+</script>
+</body>
+</html>

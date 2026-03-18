@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtual environments — never commit
+jarvis_env/
+venv/
+env/
+.env/
+
+# Secrets — NEVER COMMIT
+.env
+*.env
+secrets.json
+JARVIS_TOKEN
+*.pem
+*.key
+
+# Databases — contain operator data
+jarvis.db
+audit_log.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Runtime artifacts
+EMERGENCY_STOP.flag
+layouts/
+vision_captures/
+reports/
+reports_encrypted/
+jarvis_session_state.json
+jarvis_test_recommendations.json
+
+# Voice clips — personal audio
+voice/reference_clips/*.wav
+assets/sounds/*.wav
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Large model files — never commit
+*.onnx
+*.gguf
+*.bin
+*.pt
+*.safetensors
+models/
