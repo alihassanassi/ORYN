@@ -61,3 +61,20 @@ desktop.ini
 *.pt
 *.safetensors
 models/
+
+# Runtime state files
+jarvis_settings.json
+jarvis_evo_state.json
+jarvis_ops_state.json
+
+# Security baseline - never public
+integrity.json
+
+# Local IDE/tool config
+.claude/
+*.local.json
+
+# Database files (explicit)
+*.db
+*.db-wal
+*.db-shm
