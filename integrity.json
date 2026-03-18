@@ -1,7 +1,0 @@
-{
-  "main.py": "2849286d0aa9dc50f118fe1d5e1fdfbb2efa48801fbd4b30b61a5db3bed3b1bf",
-  "autonomy/recon_loop.py": "d283b398b0d58ae860948590407235a0c659183cbf2749f02125add1797f9320",
-  "policy/autonomy_policy.py": "f1c4a4e86ca2db3c2c7e7b1cdd6c015258923182137831f7b1e37b1ebf275ac7",
-  "security/sanitizer.py": "0b0a37682b9aa576e7e77fa4d789902574850c7f1bdd532e5e1379f061ff00bd",
-  "storage/audit_log.py": "6ae8e07cf6495e54323c849f3f4dc6f5d63a6dbff5f3e4820670d56756d0f78b"
-}
