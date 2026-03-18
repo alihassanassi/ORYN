@@ -1,0 +1,25 @@
+# J.A.R.V.I.S. — Python dependencies
+# Install: pip install -r requirements.txt
+
+# ── Core (required) ───────────────────────────────────────────────────────────
+PySide6>=6.6.0
+openai>=1.0.0
+psutil>=5.9.0
+fastapi>=0.110.0
+uvicorn>=0.27.0
+
+# ── Voice input (optional — enables STT push-to-talk) ────────────────────────
+# pip install faster-whisper sounddevice numpy
+faster-whisper>=1.0.0
+sounddevice>=0.4.6
+numpy>=1.24.0
+
+# ── UI sound engine (for generate_sounds.py + sound_engine.py) ───────────────
+soundfile>=0.12.0
+scipy>=1.11.0
+
+# ── Neural TTS (optional — Piper runs as a subprocess) ───────────────────────
+# Piper is a standalone binary, not a pip package.
+# Download from: https://github.com/rhasspy/piper/releases
+# Extract to: C:\piper\  (so piper.exe is at C:\piper\piper.exe)
+# Download voices to: C:\piper\voices\

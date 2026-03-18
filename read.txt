@@ -1,0 +1,100 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+                        powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JARVIS_START.ps1 -SkipPullCheckDOWS\system32>
+The argument '.\JARVIS_START.ps1' to the -File parameter does not exist. Provide the path to an existing '.ps1' file as an argument to the -File parameter.
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+PS C:\WINDOWS\system32> powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JARVIS_START.ps1 -SkipPullCheck
+The argument '.\JARVIS_START.ps1' to the -File parameter does not exist. Provide the path to an existing '.ps1' file as an argument to the -File parameter.
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+PS C:\WINDOWS\system32> powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\aliin\OneDrive\Desktop\Jarvis\jarvis_lab\JARVIS_START.ps1" -SkipPullCheck
+>>
+[2026-03-17 20:47:34] JARVIS startup script begin
+[2026-03-17 20:47:34] Root: C:\Users\aliin\OneDrive\Desktop\Jarvis\jarvis_lab
+[2026-03-17 20:47:34] Python: C:\Users\aliin\AppData\Local\Programs\Python\Python311\python.exe
+[2026-03-17 20:47:36] Ollama: already running
+[2026-03-17 20:47:36] Starting background prewarm job
+[2026-03-17 20:47:36] Launching JARVIS main.py
+[2026-03-17 20:47:36] Primary LLM: qwen3:14b
+[2026-03-17 20:47:36] Judge LLM: phi4-mini
+[2026-03-17 20:47:36] TTS: Chatterbox
+2026-03-17 20:47:37,050 [INFO] audio.sound_engine: [SoundEngine] ready — sounds dir: C:\Users\aliin\OneDrive\Desktop\Jarvis\jarvis_lab\assets\sounds
+2026-03-17 20:47:37,312 [INFO] jarvis.main: Fonts → mono=Consolas  display=Segoe UI
+2026-03-17 20:47:37,495 [INFO] intelligence.context_predictor: [ContextPredictor] session start recorded: 2026-03-17T20:47:37.494111
+2026-03-17 20:47:37,509 [WARNING] voice.backends.chatterbox_backend: [Chatterbox] torch not importable — loading on CPU. Performance will be degraded.
+[Chatterbox] chatterbox-tts not installed — run: pip install chatterbox-tts>=0.1.6
+[TTS] Chatterbox init failed — skipping.
+[TTS] output matched 'logitech': [6] 'Speakers (Logitech PRO X Wirele'
+2026-03-17 20:47:37,677 [INFO] runtime.integrity: [Integrity] hashes already initialized
+2026-03-17 20:47:37,677 [INFO] runtime.boot_manager: [BootManager] integrity baseline OK
+2026-03-17 20:47:37,678 [INFO] runtime.kill_switch: [KillSwitch] hotkey registration delegated to main window (Ctrl+Alt+Shift+K)
+2026-03-17 20:47:37,678 [INFO] runtime.boot_manager: [BootManager] kill switch armed — Ctrl+Alt+Shift+K
+2026-03-17 20:47:37,681 [INFO] runtime.watchdog: [Watchdog] started — monitoring 3 services
+2026-03-17 20:47:37,681 [INFO] runtime.boot_manager: [BootManager] watchdog started
+2026-03-17 20:47:37,687 [INFO] runtime.boot_manager: [BootManager] audit log initialized
+2026-03-17 20:47:37,693 [INFO] llm.local_judge: [LocalJudge] Ollama available, model: phi4-mini:latest
+2026-03-17 20:47:37,694 [INFO] runtime.boot_manager: [BootManager] LLM router initialized
+2026-03-17 20:47:37,697 [INFO] runtime.boot_manager: [BootManager] preference engine initialized
+2026-03-17 20:47:37,699 [INFO] runtime.boot_manager: [BootManager] finding engine initialized
+2026-03-17 20:47:37,699 [INFO] runtime.boot_manager: [BootManager] autonomous recon loop STANDBY — say "Enable autonomous recon" to start
+2026-03-17 20:47:37,709 [INFO] runtime.self_healer: [SelfHealer] Started — health checks every 60s
+2026-03-17 20:47:37,709 [INFO] runtime.boot_manager: [BootManager] self-healer started
+2026-03-17 20:47:37,709 [INFO] runtime.boot_manager: [BootManager] threat intel correlator STANDBY — set INTEL_CORRELATOR_ENABLED=True to activate
+2026-03-17 20:47:37,709 [INFO] runtime.boot_manager: [BootManager] hunt director STANDBY — set HUNT_DIRECTOR_ENABLED=True to activate
+2026-03-17 20:47:37,710 [INFO] intelligence.coaching_engine: [CoachingEngine] Started
+2026-03-17 20:47:37,710 [INFO] runtime.boot_manager: [BootManager] coaching engine started
+2026-03-17 20:47:37,742 [INFO] runtime.boot_manager: [AUTONOMY] Full autonomy stack online
+2026-03-17 20:47:37,744 [INFO] runtime.boot_manager: [AUTONOMY] Kill switch: Ctrl+Alt+Shift+K | flag: EMERGENCY_STOP.flag
+2026-03-17 20:47:37,745 [INFO] runtime.boot_manager: [AUTONOMY] Local LLM ratio: 0% | est. monthly cost: $0.00
+2026-03-17 20:47:38,192 [INFO] voice.wake_listener: [WakeListener] Ambient listening active
+2026-03-17 20:47:38,219 [INFO] runtime.boot_manager: [BootManager] LLM pre-warm complete — both models hot
+[Kokoro] model=C:\kokoro\kokoro-v0_19.onnx  exists=True
+[Kokoro] voices=C:\kokoro\voices-v1.0.bin
+[Kokoro] Ready — default_voice=bm_george
+[Kokoro] Prewarm OK — voice=bf_emma
+[Kokoro] Prewarm OK — voice=am_michael
+[Kokoro] Prewarm OK — voice=bm_lewis
+[Kokoro] Prewarm OK — voice=bm_george
+[TTS] Restoring profile: Voice profile set to 'JARVIS — British'.
+2026-03-17 20:47:40,603 [INFO] jarvis.main: Main window shown — boot complete.
+2026-03-17 20:47:40,864 [INFO] httpx: HTTP Request: GET http://127.0.0.1:11434/v1/models "HTTP/1.1 200 OK"
+[TTS] response_ready=29479.875
+[TTS] dispatch_start=29479.875 (queued=0.000s)
+[TTS] engine_start=29479.875
+2026-03-17 20:47:48,185 [WARNING] phonemizer: words count mismatch on 100.0% of the lines (1/1)
+[TTS] speak_begin=29481.109
+[TTS] speak_end=29487.187
+2026-03-17 20:47:59,793 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/v1/chat/completions "HTTP/1.1 200 OK"
+[TTS] response_ready=29496.671
+[TTS] dispatch_start=29496.671 (queued=0.000s)
+[TTS] engine_start=29496.687
+2026-03-17 20:48:04,995 [WARNING] phonemizer: words count mismatch on 200.0% of the lines (2/1)
+[TTS] speak_begin=29501.984
+2026-03-17 20:48:14,760 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/v1/chat/completions "HTTP/1.1 200 OK"
+[TTS] speak_end=29528.078
+2026-03-17 20:48:44,435 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/v1/chat/completions "HTTP/1.1 200 OK"
+[TTS] response_ready=29543.171
+[TTS] dispatch_start=29543.187 (queued=0.016s)
+[TTS] engine_start=29543.187
+[TTS] speak_begin=29543.562
+[TTS] speak_end=29544.890
+2026-03-17 20:48:58,042 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-17 20:48:58,569 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/v1/chat/completions "HTTP/1.1 200 OK"
+[TTS] response_ready=29556.671
+[TTS] dispatch_start=29556.671 (queued=0.000s)
+[TTS] engine_start=29556.671
+2026-03-17 20:49:04,981 [WARNING] phonemizer: words count mismatch on 200.0% of the lines (2/1)
+[TTS] speak_begin=29561.656
+2026-03-17 20:49:15,557 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/v1/chat/completions "HTTP/1.1 200 OK"
+[TTS] speak_end=29586.531
+[2026-03-17 20:49:59] main.py exited with code: 0
+PS C:\WINDOWS\system32>
